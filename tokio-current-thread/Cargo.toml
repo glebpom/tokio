@@ -22,4 +22,5 @@ categories = ["concurrency", "asynchronous"]
 
 [dependencies]
 tokio-executor = "0.1.7"
+tokio-timer = { version = "0.2.10", path = "../tokio-timer" }
 futures = "0.1.19"

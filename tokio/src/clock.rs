@@ -12,4 +12,4 @@
 //! [n]: fn.now.html
 //! [`tokio-timer`]: https://docs.rs/tokio-timer/0.2/tokio_timer/clock/index.html
 
-pub use tokio_timer::clock::now;
+pub use tokio_timer::clock::{now, tick};

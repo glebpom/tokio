@@ -13,6 +13,7 @@ use shutdown::ShutdownTrigger;
 use task::{self, CanBlock, Task};
 
 use tokio_executor;
+use tokio_timer::clock;
 
 use futures::{Async, Poll};
 
@@ -235,11 +236,15 @@ impl Worker {
         let mut tick = 0;
 
         while self.check_run_state(first) {
+            clock::clear_tick_clock();
+
             first = false;
 
             // Run the next available task
             if self.try_run_task(&notify) {
                 if self.is_blocking.get() {
+                    clock::disallow_tick_clock();
+
                     // Exit out of the run state
                     return;
                 }
@@ -270,6 +275,7 @@ impl Worker {
 
             // Starting to get sleeeeepy
             if !self.sleep() {
+                clock::disallow_tick_clock();
                 return;
             }
 
@@ -286,7 +292,10 @@ impl Worker {
         // shutting down. We are currently aware of this fact.
         let _ = self.pool.release_backup(self.backup_id);
 
+        clock::disallow_tick_clock();
+
         self.should_finalize.set(true);
+
     }
 
     /// Try to run a task

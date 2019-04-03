@@ -78,6 +78,7 @@
 //! [`runtime`]: https://docs.rs/tokio/0.1/tokio/runtime/
 
 extern crate tokio_executor;
+extern crate tokio_timer;
 
 extern crate crossbeam_deque;
 extern crate crossbeam_queue;

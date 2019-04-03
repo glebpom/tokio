@@ -18,6 +18,8 @@
 
 mod clock;
 mod now;
+mod tick;
 
 pub use self::clock::{now, with_default, Clock};
+pub use self::tick::{tick, clear_tick_clock, disallow_tick_clock};
 pub use self::now::Now;

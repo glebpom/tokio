@@ -2,10 +2,13 @@ extern crate env_logger;
 extern crate futures;
 extern crate tokio_executor;
 extern crate tokio_threadpool;
+extern crate tokio_timer;
 
 use tokio_executor::park::{Park, Unpark};
 use tokio_threadpool::park::{DefaultPark, DefaultUnpark};
 use tokio_threadpool::*;
+
+use tokio_timer::clock;
 
 use futures::future::lazy;
 use futures::{Async, Future, Poll, Sink, Stream};
@@ -533,4 +536,26 @@ fn eagerly_drops_futures() {
 
     // Ensure `task` lives until after the test completes.
     drop(task);
+}
+
+#[test]
+fn tick_clock_is_working() {
+    let pool = ThreadPool::new();
+    let tx = pool.sender().clone();
+
+    let (signal_tx, signal_rx) = mpsc::channel();
+
+    tx.spawn(lazy(move || {
+        tokio_executor::spawn(lazy(move || {
+            signal_tx.send(clock::tick()).unwrap();
+            Ok(())
+        }));
+
+        Ok(())
+    }))
+        .unwrap();
+
+    signal_rx.recv().unwrap();
+
+    pool.shutdown().wait().unwrap();
 }

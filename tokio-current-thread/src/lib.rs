@@ -27,6 +27,7 @@
 
 extern crate futures;
 extern crate tokio_executor;
+extern crate tokio_timer;
 
 mod scheduler;
 
@@ -34,6 +35,8 @@ use self::scheduler::Scheduler;
 
 use tokio_executor::park::{Park, ParkThread, Unpark};
 use tokio_executor::{Enter, SpawnError};
+
+use tokio_timer::clock;
 
 use futures::future::{ExecuteError, ExecuteErrorKind, Executor};
 use futures::{executor, Async, Future};
@@ -502,6 +505,7 @@ impl<'a, P: Park> Entered<'a, P> {
             self.tick();
 
             if let Err(_) = self.executor.park.park() {
+                clock::disallow_tick_clock();
                 return Err(BlockError { inner: None });
             }
         }
@@ -563,18 +567,21 @@ impl<'a, P: Park> Entered<'a, P> {
             self.tick();
 
             if self.executor.is_idle() {
+                clock::disallow_tick_clock();
                 return Ok(());
             }
 
             match time {
                 Some((until, rem)) => {
                     if let Err(_) = self.executor.park.park_timeout(rem) {
+                        clock::disallow_tick_clock();
                         return Err(RunTimeoutError::new(false));
                     }
 
                     let now = Instant::now();
 
                     if now >= until {
+                        clock::disallow_tick_clock();
                         return Err(RunTimeoutError::new(true));
                     }
 
@@ -582,6 +589,7 @@ impl<'a, P: Park> Entered<'a, P> {
                 }
                 None => {
                     if let Err(_) = self.executor.park.park() {
+                        clock::disallow_tick_clock();
                         return Err(RunTimeoutError::new(false));
                     }
                 }
@@ -591,6 +599,8 @@ impl<'a, P: Park> Entered<'a, P> {
 
     /// Returns `true` if any futures were processed
     fn tick(&mut self) -> bool {
+        clock::clear_tick_clock();
+
         // Spawn any futures that were spawned from other threads by manually
         // looping over the receiver stream
 

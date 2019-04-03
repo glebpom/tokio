@@ -832,6 +832,32 @@ fn spawn_from_executor_with_handle() {
     rx.wait().unwrap();
 }
 
+#[test]
+fn tick_clock() {
+    let mut current_thread = CurrentThread::new();
+
+    current_thread.spawn(lazy(move || {
+        tokio_timer::clock::tick();
+        Ok::<_, ()>(())
+    }));
+
+    current_thread.run().unwrap();
+}
+
+#[test]
+#[should_panic]
+fn tick_clock_panic() {
+    let mut current_thread = CurrentThread::new();
+
+    current_thread.spawn(lazy(move || {
+        Ok::<_, ()>(())
+    }));
+
+    current_thread.run().unwrap();
+
+    tokio_timer::clock::tick();
+}
+
 fn ok() -> future::FutureResult<(), ()> {
     future::ok(())
 }
